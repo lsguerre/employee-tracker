@@ -48,7 +48,7 @@ const viewDepartments = () => {
     const sql = `SELECT * FROM department ORDER BY id`;
     db.promise().query(sql)
         .then(rows => {
-            consoleTable(rows[0]);
+            console.table(rows[0]);
         })
         .then(options);
 }
@@ -92,6 +92,8 @@ const newDepartment = () => {
 
 const newRole = () => {
     const sql = `INSERT INTO role (title, salary, department_id)`
+
+    
     
 }
 
