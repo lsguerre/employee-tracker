@@ -1,5 +1,5 @@
 const inquirer = require('inquirer')
-const db = require('./db/connection')
+const connection = require('./db/connection')
 const consoleTable = require('console.table')
 
 const options = () => {
@@ -23,39 +23,41 @@ const options = () => {
         switch (options) {
             case 'View departments':
                 viewDepartments()
-                break
+                break;
             case 'View roles':
                 viewRoles()
-                break
+                break;
             case 'View employees':
                 viewEmployees()
-                break
+                break;
             case 'Add department':
                 newDepartment()
-                break
+                break;
             case 'Add role':
                 newRole()
-                break
+                break;
             case 'Add an employee':
                 newEmployee()
-                break
+                break;
             case 'Exit':
-                process.exit()
+                process.exit();
             
         }
     })
-const viewDepartments = () => {
-    const sql = `SELECT * FROM department ORDER BY id`;
-    db.promise().query(sql)
-        .then(rows => {
-            console.table(rows[0]);
-        })
-        .then(options);
+
 }
 
+function viewDepartments() {
+        const sql = `SELECT * FROM department`;
+        connection.promise().query(sql)
+            .then(rows => {
+                console.table(rows[0]);
+            })
+            .then(options);
+    }
 function viewRoles() {
-    const sql = `SELECT * FROM role ORDER BY id`;
-    db.promise().query(sql)
+    const sql = `SELECT * FROM role`;
+    connection.promise().query(sql)
         .then(rows => {
             console.table(rows[0]);
         })
@@ -64,7 +66,7 @@ function viewRoles() {
 
 const viewEmployees = () => {
     const sql = `SELECT * FROM employee ORDER BY id`;
-    db.promise().query(sql)
+    connection.promise().query(sql)
         .then(rows => {
             console.table(rows[0]);
         })
@@ -72,7 +74,7 @@ const viewEmployees = () => {
 }
 
 const newDepartment = () => {
-    const sql = `INSERT INTO deparment (deparment) VALUES (?)`;
+    const sql = `INSERT INTO department (department) VALUES (?)`;
     inquirer.prompt([
         {
             type: 'input',
@@ -81,7 +83,7 @@ const newDepartment = () => {
         }
     ])
     .then(data => 
-        db.promise().query(sql, data.newDepartment, (err, result) =>
+        connection.query(sql, data.newDepartment, (err, result) =>
         {
             if (err) throw err
 
@@ -91,16 +93,67 @@ const newDepartment = () => {
 }
 
 const newRole = () => {
-    const sql = `INSERT INTO role (title, salary, department_id)`
-
-    
-    
+    const sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+    connection.query(`SELECT * FROM department ORDER BY id`, (err, result) => {
+        if (err) throw (err);
+        const departmentChoices = result.map(( { id, department_name }) => ({ name: department_name, value: id }))
+        inquirer.prompt([
+            {
+                type: 'input',
+                name: 'title',
+                message: 'What is the name of the role?'
+            },
+            {
+                type: 'input',
+                name: 'salary',
+                message: 'What is the salary of the role?'
+            },
+            {
+                type: 'list',
+                name: 'department_id',
+                message: 'Which department does the role belong to?',
+                choices: departmentChoices
+            }
+        ])
+            .then(data =>
+                connection.promise.query(sql, [data.title, data.salary, data.department_id], (err, result) => {
+                if (err) throw err
+            }) .then (viewRoles))
+            
+    })    
 }
 
-db.promise().query(sql)
-.then(rows => {
-console.table(rows[0])
-})
-.then(options)
+
+const newEmployee = () => {
+    const sql = `INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)`;
+    connection.query(`SELECT * FROM employee ORDER BY id`, (err, result) => {
+        if (err) throw (err);
+        const roleChoices = result.map(( { id, title }) => ({ name: title, value: id }))
+        inquirer.prompt([
+            {
+                type: 'input',
+                name: 'first_name',
+                message: 'What is the first name of the employee?'
+            },
+            {
+                type: 'input',
+                name: 'last_name',
+                message: 'What is the last name of the employee?'
+            },
+            {
+                type: 'list',
+                name: 'role_id',
+                message: 'Which role does the employee have?',
+                choices: roleChoices
+            }
+        ])
+            .then(data =>
+                connection.promise.query(sql, [data.first_name, data.last_name, data.role_id], (err, result) => {
+                if (err) throw err
+            }) .then (viewRoles))
+            
+    })    
 }
+
+
 options()
